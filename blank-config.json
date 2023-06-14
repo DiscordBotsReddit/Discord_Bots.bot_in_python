@@ -1,0 +1,4 @@
+{"TOKEN": "token"
+,"DATABASE": "postgresql+psycopg2://user:pass@host:port/database"
+,"VERSION": "0.0.1"
+}
