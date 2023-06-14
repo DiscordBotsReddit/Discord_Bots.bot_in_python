@@ -25,7 +25,7 @@ class Quote(commands.Cog):
     async def quote_message(
         self,
         interaction: discord.Interaction,
-        id: str = None,
+        id: str = None,  # Apparently int doesn't support IDs. 🤷‍♂️
         link: str = None,
         text: str = None,
         user: discord.Member = None,
