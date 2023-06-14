@@ -15,6 +15,24 @@ with open("./config.json", "r") as f:
 engine = create_engine(config["DATABASE"])
 
 
+async def find_cmd(bot: commands.Bot, cmd: str, group: str = None):
+    if group is None:
+        command = discord.utils.find(
+            lambda c: c.name.lower() == cmd.lower(),
+            await bot.tree.fetch_commands(),
+        )
+        return command
+    else:
+        cmd_group = discord.utils.find(
+            lambda cg: cg.name.lower() == group.lower(),
+            await bot.tree.fetch_commands(),
+        )
+        for child in cmd_group.options:
+            if child.name.lower() == cmd.lower():
+                return child
+    return "No command found."
+
+
 class Tags(commands.GroupCog, name="tags"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -30,13 +48,19 @@ class Tags(commands.GroupCog, name="tags"):
             stmt = select(Tag.name).where(Tag.guild_id == interaction.guild_id)
             cur_tags = list(session.scalars(stmt).all())
         if len(cur_tags) == 0:
+            add_tag = await find_cmd(
+                self.bot, group=interaction.command.parent.name, cmd="add"
+            )
             return await interaction.response.send_message(
-                f"No tags added.  To add a tag, do `/{interaction.command.parent.name} add`"
+                f"No tags added.  To add a tag, do {add_tag.mention}"
             )
         for tag in range(len(cur_tags)):
             cur_tags[tag] = "`" + cur_tags[tag] + "`"
+        run_tag = await find_cmd(
+            self.bot, group=interaction.command.parent.name, cmd="run"
+        )
         await interaction.response.send_message(
-            f"Tags are short custom commands added by moderators. Current tags: {', '.join(cur_tags)}. To use a tag, do `/{interaction.command.parent.name} run`. ",
+            f"Tags are short custom commands added by moderators. Current tags: {', '.join(cur_tags)}. To use a tag, do {run_tag.mention}. ",
             ephemeral=True,
         )
 
@@ -64,8 +88,13 @@ class Tags(commands.GroupCog, name="tags"):
                 )
                 exists = session.scalar(stmt)
                 if exists:
+                    edit_tag = await find_cmd(
+                        self.bot,
+                        group=interaction.command.parent.name,
+                        cmd="edit",
+                    )
                     return await interaction.followup.send(
-                        content=f"The tag `{exists.name}` already exists. If you are trying to edit it, use `/{interaction.command.parent.name} edit {exists.name}`.",
+                        content=f"The tag `{exists.name}` already exists. If you are trying to edit it, use {edit_tag.mention}.",
                         ephemeral=True,
                     )
                 else:
