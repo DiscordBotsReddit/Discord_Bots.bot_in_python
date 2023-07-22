@@ -8,7 +8,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 from humanfriendly import parse_timespan
-from sqlalchemy import create_engine, delete, insert, select
+from sqlalchemy import create_engine, delete, select
 from sqlalchemy.orm import Session
 
 from modals.reminders import Reminder
@@ -30,15 +30,18 @@ class RemindMe(commands.GroupCog, name='reminders'):
         return fixed
     
     @app_commands.command(name='set', description='Have the bot remind you of a message.')
-    @app_commands.describe(length='Humanfriendly version (5h = 5 hours / 10m = 10 minutes / etc.)')
-    async def set_reminder(self, interaction: discord.Interaction, length: str, reminder: Optional[str]):
+    @app_commands.describe(timeframe='Humanfriendly version (5h = 5 hours / 10m = 10 minutes / etc.)')
+    async def set_reminder(self, interaction: discord.Interaction, timeframe: str, reminder: Optional[str]):
         if not str(interaction.channel.type) == 'text':  # type: ignore
             return await interaction.response.send_message("Please run this command in a text channel.", ephemeral=True, delete_after=60)
         if reminder is None:
             reminder = "No reminder reason given"
-        parsed_length = parse_timespan(length)
+        parsed_timeframe = parse_timespan(timeframe)
         timestamp_reminding_from = int((datetime.now(tz=UTC) - datetime(1970,1,1,tzinfo=UTC)).total_seconds())
-        timestamp_to_remind_at = int(((datetime.now(tz=UTC) + timedelta(seconds=parsed_length)) - datetime(1970,1,1,tzinfo=UTC)).total_seconds())
+        try:
+            timestamp_to_remind_at = int(((datetime.now(tz=UTC) + timedelta(seconds=parsed_timeframe)) - datetime(1970,1,1,tzinfo=UTC)).total_seconds())
+        except OverflowError:
+            return await interaction.response.send_message(f"The time frame you entered is too far in the future.  Please try again with a smaller time frame.", ephemeral=True, delete_after=20)
         with Session(engine) as session:
             new_reminder = Reminder(
                 user_id=interaction.user.id,
