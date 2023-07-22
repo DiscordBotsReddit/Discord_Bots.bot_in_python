@@ -87,7 +87,7 @@ class RemindMe(commands.GroupCog, name='reminders'):
             for reminder in reminders_to_send:
                 chan_to_send_reminder = await self.bot.fetch_channel(reminder.original_channel_id)
                 user_that_set_reminder = await chan_to_send_reminder.guild.fetch_member(reminder.user_id)  # type: ignore
-                await chan_to_send_reminder.send(f"Reminder!  {user_that_set_reminder.mention}:  `{reminder.reminder}`")  # type: ignore
+                await chan_to_send_reminder.send(f"Reminder <t:{reminder.timestamp_reminding_from}:R>!  {user_that_set_reminder.mention}:  `{reminder.reminder}`")  # type: ignore
                 with Session(engine) as session:
                     session.execute(delete(Reminder).where(Reminder.id==reminder.id))
                     session.commit()
