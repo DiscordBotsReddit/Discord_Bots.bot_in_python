@@ -14,6 +14,7 @@ with open("./config.json", "r") as f:
 
 engine = create_engine(config["DATABASE"])
 DEV_ROLE = "DEVELOPER"
+MOD_LOG = 'mod-log'
 RESPONSE_MESSAGE = "Thank you for your application!  Please be patient as The Council processes your request."
 EXISTING_APP_MESSAGE = f"You already requested the `{DEV_ROLE}` role.  Please be patient as The Council processes your request."
 ALREADY_DEV_MESSAGE = f"You already have the `{DEV_ROLE}` role."
@@ -50,7 +51,7 @@ class Dev(commands.Cog):
         async def approved_callback(
             self, interaction: discord.Interaction, button: discord.ui.Button
         ):
-            old_embed: dict = interaction.message.embeds[0].to_dict()
+            old_embed: dict = interaction.message.embeds[0].to_dict()  # type: ignore
             embed: discord.Embed = discord.Embed(title="Developer Role Application")
             embed.set_author(
                 name=old_embed["author"]["name"],
@@ -61,12 +62,12 @@ class Dev(commands.Cog):
                     name=field["name"], value=field["value"], inline=field["inline"]
                 )
             try:
-                member: discord.Member = await interaction.guild.fetch_member(
-                    int(interaction.message.embeds[0].fields[0].value)
+                member: discord.Member = await interaction.guild.fetch_member(  # type: ignore
+                    int(interaction.message.embeds[0].fields[0].value)  # type: ignore
                 )
                 dev_role = [
                     role
-                    for role in interaction.guild.roles
+                    for role in interaction.guild.roles  # type: ignore
                     if role.name.lower() == DEV_ROLE.lower()
                 ]
                 if len(dev_role) == 0:
@@ -89,34 +90,34 @@ class Dev(commands.Cog):
             with Session(engine) as session:
                 del_stmt = delete(DevApplication).where(
                     DevApplication.user_id
-                    == int(interaction.message.embeds[0].fields[0].value)
+                    == int(interaction.message.embeds[0].fields[0].value)  # type: ignore
                 )
                 session.execute(del_stmt)
                 session.commit()
             for child in self.children:
                 if type(child) == discord.ui.Button:
                     child.disabled = True
-                if child.label == "Deny":
-                    child.style = discord.ButtonStyle.grey
+                if child.label == "Deny":  # type: ignore
+                    child.style = discord.ButtonStyle.grey  # type: ignore
             await interaction.response.edit_message(view=self, embed=embed)
 
         @discord.ui.button(label="Deny", style=discord.ButtonStyle.danger)
         async def deny_callback(
             self, interaction: discord.Interaction, button: discord.ui.Button
         ):
-            old_embed = interaction.message.embeds[0].to_dict()
+            old_embed = interaction.message.embeds[0].to_dict()  # type: ignore
             embed = discord.Embed(title="Developer Role Application")
             embed.set_author(
-                name=old_embed["author"]["name"],
-                icon_url=old_embed["author"]["icon_url"],
+                name=old_embed["author"]["name"],  # type: ignore
+                icon_url=old_embed["author"]["icon_url"],  # type: ignore
             )
-            for field in old_embed["fields"]:
+            for field in old_embed["fields"]:  # type: ignore
                 embed.add_field(
-                    name=field["name"], value=field["value"], inline=field["inline"]
+                    name=field["name"], value=field["value"], inline=field["inline"]  # type: ignore
                 )
             try:
-                member = await interaction.guild.fetch_member(
-                    int(interaction.message.embeds[0].fields[0].value)
+                member = await interaction.guild.fetch_member(  # type: ignore
+                    int(interaction.message.embeds[0].fields[0].value)  # type: ignore
                 )
                 embed.title = "**DENIED** Developer Role Application"
                 embed.color = discord.Color.from_rgb(*self.DENIED)
@@ -133,15 +134,15 @@ class Dev(commands.Cog):
             with Session(engine) as session:
                 del_stmt = delete(DevApplication).where(
                     DevApplication.user_id
-                    == int(interaction.message.embeds[0].fields[0].value)
+                    == int(interaction.message.embeds[0].fields[0].value)  # type: ignore
                 )
                 session.execute(del_stmt)
                 session.commit()
             for child in self.children:
                 if type(child) == discord.ui.Button:
                     child.disabled = True
-                if child.label == "Approve":
-                    child.style = discord.ButtonStyle.grey
+                if child.label == "Approve":  # type: ignore
+                    child.style = discord.ButtonStyle.grey  # type: ignore
             await interaction.response.edit_message(view=self, embed=embed)
 
     @app_commands.command(
@@ -157,32 +158,32 @@ class Dev(commands.Cog):
             return await interaction.response.send_message(
                 EXISTING_APP_MESSAGE, ephemeral=True
             )
-        if len(interaction.user.roles) > 1:
+        if len(interaction.user.roles) > 1:  # type: ignore
             has_role = [
                 role
-                for role in interaction.user.roles
+                for role in interaction.user.roles  # type: ignore
                 if role.name.lower() == DEV_ROLE.lower()
             ]
             if len(has_role) > 0:
                 return await interaction.response.send_message(
                     ALREADY_DEV_MESSAGE, ephemeral=True
                 )
-        mod_log = discord.utils.find(
-            lambda c: c.name.lower() == "mod-log", interaction.guild.text_channels
+        mod_log_channel = discord.utils.find(
+            lambda c: c.name.lower() == MOD_LOG.lower(), interaction.guild.text_channels  # type: ignore
         )
         application_embed = discord.Embed(
             title="Developer Role Application",
             color=discord.Color.from_rgb(*self.PENDING),
         )
         application_embed.set_author(
-            name=interaction.user.display_name, icon_url=interaction.user.avatar.url
+            name=interaction.user.display_name, icon_url=interaction.user.avatar.url  # type: ignore
         )
         application_embed.add_field(
             name="User ID", value=interaction.user.id, inline=False
         )
         application_embed.add_field(name="Github URL", value=github_url)
         approval_buttons = self.ApprovalButtons()
-        log_message = await mod_log.send(embed=application_embed, view=approval_buttons)
+        log_message = await mod_log_channel.send(embed=application_embed, view=approval_buttons)  # type: ignore
         dev_application = DevApplication(
             user_id=interaction.user.id,
             guild_id=interaction.guild_id,
@@ -201,5 +202,5 @@ async def setup(bot: commands.Bot) -> None:
 
 
 async def teardown(bot: commands.Bot) -> None:
-    await bot.remove_cog(Dev(bot))
+    await bot.remove_cog(Dev(bot))  # type: ignore
     print(f"{__name__[5:].upper()} unloaded")

@@ -1,6 +1,7 @@
 import datetime
 import os
 import unicodedata
+from typing import Optional
 
 import discord
 from discord import app_commands
@@ -25,21 +26,26 @@ class UserInfo(commands.Cog):
     @app_commands.command(
         name="userinfo", description="Get information about someone or yourself"
     )
+    @app_commands.describe(member='Leave blank for self or mention the member you want info for.')
     async def userinfo(
-        self, interaction: discord.Interaction, member: discord.Member = None
+        self, interaction: discord.Interaction, member: Optional[discord.Member]
     ):
         if member is None:
-            member = interaction.user
-        embed = discord.Embed(color=member.color)
-        embed.set_author(name=member.global_name, icon_url=member.avatar.url)
-        if member.nick:
-            embed.add_field(name="Nickname", value=member.nick, inline=True)
+            member = interaction.user  # type: ignore
+        embed = discord.Embed(color=member.color)  # type: ignore
+        embed.set_author(name=member.global_name, icon_url=member.avatar.url)  # type: ignore
+        if member.nick:  # type: ignore
+            embed.add_field(name="Nickname", value=member.nick, inline=True)  # type: ignore
         embed.add_field(
-            name="Date Joined", value=format_date(member.joined_at), inline=True
+            name="Date Joined", value=format_date(member.joined_at), inline=True  # type: ignore
         )
         embed.add_field(
-            name="User Creation Date", value=format_date(member.created_at), inline=True
+            name="User Creation Date", value=format_date(member.created_at), inline=True  # type: ignore
         )
+        try:
+            embed.set_footer(text=f"Requested by {interaction.user.name}", icon_url=interaction.user.avatar.url)  # type: ignore
+        except:
+            embed.set_footer(text=f"Requested by {interaction.user.name}")
         await interaction.response.send_message(embed=embed)
 
 

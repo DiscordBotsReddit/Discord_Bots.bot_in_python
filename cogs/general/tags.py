@@ -1,5 +1,6 @@
 import json
 import unicodedata
+from typing import Optional
 
 import discord
 from discord import app_commands
@@ -15,7 +16,7 @@ with open("./config.json", "r") as f:
 engine = create_engine(config["DATABASE"])
 
 
-async def find_cmd(bot: commands.Bot, cmd: str, group: str = None):
+async def find_cmd(bot: commands.Bot, cmd: str, group: Optional[str]):
     if group is None:
         command = discord.utils.find(
             lambda c: c.name.lower() == cmd.lower(),
@@ -27,7 +28,7 @@ async def find_cmd(bot: commands.Bot, cmd: str, group: str = None):
             lambda cg: cg.name.lower() == group.lower(),
             await bot.tree.fetch_commands(),
         )
-        for child in cmd_group.options:
+        for child in cmd_group.options:  # type: ignore
             if child.name.lower() == cmd.lower():
                 return child
     return "No command found."
@@ -49,18 +50,18 @@ class Tags(commands.GroupCog, name="tags"):
             cur_tags = list(session.scalars(stmt).all())
         if len(cur_tags) == 0:
             add_tag = await find_cmd(
-                self.bot, group=interaction.command.parent.name, cmd="add"
+                self.bot, group=interaction.command.parent.name, cmd="add"  # type: ignore
             )
             return await interaction.response.send_message(
-                f"No tags added.  To add a tag, do {add_tag.mention}"
+                f"No tags added.  To add a tag, do {add_tag.mention}"  # type: ignore
             )
         for tag in range(len(cur_tags)):
             cur_tags[tag] = "`" + cur_tags[tag] + "`"
         run_tag = await find_cmd(
-            self.bot, group=interaction.command.parent.name, cmd="run"
+            self.bot, group=interaction.command.parent.name, cmd="run"  # type: ignore
         )
         await interaction.response.send_message(
-            f"Tags are short custom commands added by moderators. Current tags: {', '.join(cur_tags)}. To use a tag, do {run_tag.mention}. ",
+            f"Tags are short custom commands added by moderators. Current tags: {', '.join(cur_tags)}. To use a tag, do {run_tag.mention}. ",  # type: ignore
             ephemeral=True,
         )
 
@@ -71,7 +72,7 @@ class Tags(commands.GroupCog, name="tags"):
                 Tag.guild_id == interaction.guild_id, Tag.name == tag_name
             )
             tag = session.scalar(stmt)
-        await interaction.response.send_message(tag.content)
+        await interaction.response.send_message(tag.content)  # type: ignore
 
     class NewTag(discord.ui.Modal, title="New Tag"):
         tag_name = discord.ui.TextInput(label="Tag Name")
@@ -89,23 +90,17 @@ class Tags(commands.GroupCog, name="tags"):
                 exists = session.scalar(stmt)
                 if exists:
                     edit_tag = await find_cmd(
-                        self.bot,
-                        group=interaction.command.parent.name,
+                        self.bot,  # type: ignore
+                        group=interaction.command.parent.name,  # type: ignore
                         cmd="edit",
                     )
                     return await interaction.followup.send(
-                        content=f"The tag `{exists.name}` already exists. If you are trying to edit it, use {edit_tag.mention}.",
+                        content=f"The tag `{exists.name}` already exists. If you are trying to edit it, use {edit_tag.mention}.",  # type: ignore
                         ephemeral=True,
                     )
                 else:
                     select_stmt = select(Tag).order_by(Tag.id.desc())
-                    new_id = session.scalar(select_stmt)
-                    if new_id:
-                        new_id = new_id.id + 1
-                    else:
-                        new_id = 1
                     insert_stmt = insert(Tag).values(
-                        id=new_id,
                         guild_id=interaction.guild_id,
                         name=self.tag_name.value.lower(),
                         content=self.tag_content.value,
@@ -200,5 +195,5 @@ async def setup(bot: commands.Bot):
 
 
 async def teardown(bot: commands.Bot):
-    await bot.remove_cog(Tags(bot))
+    await bot.remove_cog(Tags(bot))  # type: ignore
     print(f"{__name__[5:].upper()} unloaded")

@@ -1,10 +1,11 @@
 import json
 import unicodedata
+from typing import Optional
 
 import discord
 from discord import app_commands
 from discord.ext import commands
-from sqlalchemy import create_engine, delete, insert, select, update
+from sqlalchemy import create_engine, delete, insert, select
 from sqlalchemy.orm import Session
 
 from modals.language import Language
@@ -34,18 +35,18 @@ class SetLanguages(commands.GroupCog, name="languages"):
         self,
         interaction: discord.Interaction,
         language: str,
-        role: discord.Role = None,
+        role: Optional[discord.Role],
     ):
         if role is None:
             lang_role = [
                 role
-                for role in interaction.guild.roles
+                for role in interaction.guild.roles  # type: ignore
                 if role.name.lower() == language.lower()
             ]
             if len(lang_role) > 0:
                 role = lang_role[0]
             else:
-                role = await interaction.guild.create_role(name=language.capitalize())
+                role = await interaction.guild.create_role(name=language.capitalize())  # type: ignore
         with Session(engine) as session:
             stmt = select(Language).where(
                 Language.guild_id == interaction.guild_id,
@@ -60,13 +61,7 @@ class SetLanguages(commands.GroupCog, name="languages"):
                 )
             else:
                 select_stmt = select(Language).order_by(Language.id.desc())
-                new_id = session.scalar(select_stmt)
-                if new_id:
-                    new_id = new_id.id + 1
-                else:
-                    new_id = 1
-                insert_stmt = insert(Language).values(
-                    id=new_id,
+                insert_stmt = insert(Language).values(  
                     guild_id=interaction.guild_id,
                     name=language.lower(),
                     role_id=role.id,
@@ -99,7 +94,7 @@ class SetLanguages(commands.GroupCog, name="languages"):
             session.execute(del_stmt)
             session.commit()
         lang_role = discord.utils.find(
-            lambda c: c.name.lower() == language.lower(), interaction.guild.roles
+            lambda c: c.name.lower() == language.lower(), interaction.guild.roles  # type: ignore
         )
         print(lang_role)
         await interaction.response.send_message(f"Deleted `{language}` from languages.")
@@ -108,17 +103,17 @@ class SetLanguages(commands.GroupCog, name="languages"):
     async def list_languages(self, interaction: discord.Interaction):
         with Session(engine) as session:
             stmt = select(Language.name).where(
-                Language.guild_id == interaction.guild_id
+                Language.guild_id == interaction.guild_id  # type: ignore
             )
             cur_langs = list(session.scalars(stmt).all())
         if len(cur_langs) == 0:
             return await interaction.response.send_message(
-                f"No languages added.  To add a language, do `/{interaction.command.parent.name} add"
+                f"No languages added.  To add a language, do `/{interaction.command.parent.name} add"  # type: ignore
             )
         for lang in range(len(cur_langs)):
             cur_langs[lang] = "`" + cur_langs[lang] + "`"
         await interaction.response.send_message(
-            f"Current languages: {', '.join(cur_langs)}. To get a language role, do `/{interaction.command.parent.name} get`. ",
+            f"Current languages: {', '.join(cur_langs)}. To get a language role, do `/{interaction.command.parent.name} get`. ",  # type: ignore
             ephemeral=True,
         )
 
@@ -130,15 +125,15 @@ class SetLanguages(commands.GroupCog, name="languages"):
                 Language.name == language.lower(),
             )
             lang = session.scalar(stmt)
-        lang_role = interaction.guild.get_role(lang.role_id)
-        if lang_role not in interaction.user.roles:
-            await interaction.user.add_roles(lang_role)
+        lang_role = interaction.guild.get_role(lang.role_id)  # type: ignore
+        if lang_role not in interaction.user.roles:  # type: ignore
+            await interaction.user.add_roles(lang_role)  # type: ignore
             await interaction.response.send_message(
-                f"Added `{lang.name.capitalize()}`", ephemeral=True, delete_after=60
+                f"Added `{lang.name.capitalize()}`", ephemeral=True, delete_after=60  # type: ignore
             )
         else:
             await interaction.response.send_message(
-                f"You already have the {lang_role.mention} role."
+                f"You already have the {lang_role.mention} role."  # type: ignore
             )
 
 

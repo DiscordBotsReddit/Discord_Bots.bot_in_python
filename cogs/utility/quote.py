@@ -1,5 +1,6 @@
 import json
 import unicodedata
+from typing import Optional
 
 import discord
 from discord import app_commands
@@ -25,10 +26,10 @@ class Quote(commands.Cog):
     async def quote_message(
         self,
         interaction: discord.Interaction,
-        id: str = None,  # Apparently int doesn't support IDs. 🤷‍♂️
-        link: str = None,
-        text: str = None,
-        user: discord.Member = None,
+        id: Optional[str],  # Apparently int doesn't support IDs. 🤷‍♂️
+        link: Optional[str],
+        text: Optional[str],
+        user: Optional[discord.Member],
     ):
         if id is not None:
             try:
@@ -38,7 +39,7 @@ class Quote(commands.Cog):
                     "If searching by ID, you must use only the message_id."
                 )
             try:
-                text_channels = [chan for chan in interaction.guild.text_channels]
+                text_channels = [chan for chan in interaction.guild.text_channels]  # type: ignore
                 for channel in text_channels:
                     async for msg in channel.history(limit=200):
                         if msg.id == int(id):
@@ -49,7 +50,7 @@ class Quote(commands.Cog):
                 )
         elif link is not None:
             try:
-                text_channels = [chan for chan in interaction.guild.text_channels]
+                text_channels = [chan for chan in interaction.guild.text_channels]  # type: ignore
                 for channel in text_channels:
                     async for msg in channel.history(limit=200):
                         if msg.id == int(link.split("/")[-1]):
@@ -61,7 +62,7 @@ class Quote(commands.Cog):
         elif text is not None and user is not None:
             messages = [
                 message
-                async for message in interaction.channel.history(limit=200)
+                async for message in interaction.channel.history(limit=200)  # type: ignore
                 if message.author == user and text.lower() in message.content.lower()
             ]
             if len(messages) > 1:
@@ -70,38 +71,43 @@ class Quote(commands.Cog):
                     ephemeral=True,
                     delete_after=60,
                 )
-            else:
-                message = messages[0]
+            if len(messages) == 0:
+                return await interaction.response.send_message(
+                    "No message found matching.  Please try again.",
+                    ephemeral=True,
+                    delete_after=60,
+                )
+            message = messages[0]
+            quote_text = message.content
+            quote_permalink = f"\n\n[Permalink]({message.jump_url})"
+            if len(quote_text) > config["DESCRIPTION_LIMIT"] - len(quote_permalink):
+                quote_text = (
+                    quote_text[0 : config["DESCRIPTION_LIMIT"] - len(quote_permalink) - 1]
+                    + "..."
+                )
+            try:
+                member = await interaction.guild.fetch_member(message.author.id)  # type: ignore
+                embed = discord.Embed(
+                    color=member.color,
+                    timestamp=message.created_at,
+                    description=quote_text + quote_permalink,
+                )
+                embed.set_author(
+                    name=message.author.display_name,
+                    icon_url=message.author.avatar.url,  # type: ignore
+                )
+                await interaction.response.send_message(embed=embed)
+            except Exception as e:
+                return await interaction.response.send_message(
+                    f"That member is no longer in this server and is unable to be quoted.\n{e}",
+                    ephemeral=True,
+                    delete_after=20,
+                )
         else:
             return await interaction.response.send_message(
                 "No valid search query entered.\nIf searching by `text`, you must include a `member` in the search.",
                 ephemeral=True,
                 delete_after=10,
-            )
-        quote_text = message.content
-        quote_permalink = f"\n\n[Permalink]({message.jump_url})"
-        if len(quote_text) > config["DESCRIPTION_LIMIT"] - len(quote_permalink):
-            quote_text = (
-                quote_text[0 : config["DESCRIPTION_LIMIT"] - len(quote_permalink) - 1]
-                + "..."
-            )
-        try:
-            member = await interaction.guild.fetch_member(message.author.id)
-            embed = discord.Embed(
-                color=member.color,
-                timestamp=message.created_at,
-                description=quote_text + quote_permalink,
-            )
-            embed.set_author(
-                name=message.author.display_name,
-                icon_url=message.author.avatar.url,
-            )
-            await interaction.response.send_message(embed=embed)
-        except Exception as e:
-            return await interaction.response.send_message(
-                f"That member is no longer in this server and is unable to be quoted.\n{e}",
-                ephemeral=True,
-                delete_after=20,
             )
 
 

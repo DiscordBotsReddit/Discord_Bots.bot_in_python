@@ -8,7 +8,7 @@ class Base(DeclarativeBase):
 
 class DevApplication(Base):
     __tablename__ = "devapplications"
-    user_id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     guild_id: Mapped[int] = mapped_column(BigInteger)
     github_url: Mapped[str] = mapped_column(String(255))
     message_id: Mapped[int] = mapped_column(BigInteger)

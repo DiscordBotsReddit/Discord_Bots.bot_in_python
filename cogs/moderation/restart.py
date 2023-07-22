@@ -16,6 +16,7 @@ class Restart(commands.Cog):
         return fixed
 
     @app_commands.command(name="restart", description="Restart the bot.")
+    @app_commands.checks.has_role("Trusted")
     async def restart_bot(self, interaction: discord.Interaction):
         await interaction.response.send_message("Restarting!", ephemeral=True)
         sys.exit(2)
