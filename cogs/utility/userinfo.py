@@ -33,7 +33,10 @@ class UserInfo(commands.Cog):
         if member is None:
             member = interaction.user  # type: ignore
         embed = discord.Embed(color=member.color)  # type: ignore
-        embed.set_author(name=member.global_name, icon_url=member.avatar.url)  # type: ignore
+        try:
+            embed.set_author(name=member.global_name, icon_url=member.avatar.url)  # type: ignore
+        except:
+            embed.set_author(name=member.global_name)  # type: ignore
         if member.nick:  # type: ignore
             embed.add_field(name="Nickname", value=member.nick, inline=True)  # type: ignore
         embed.add_field(
