@@ -92,18 +92,6 @@ async def reloadall(ctx: commands.Context):
                     await ctx.send(f"Reloaded `{subdir}.{file[:-3]}`")
 
 
-@bot.command()
-@commands.is_owner()
-async def load(ctx: commands.Context, extension: str):
-    await ctx.message.delete()
-    try:
-        await bot.load_extension(f"cogs.{extension}")
-        await ctx.send(f"Loaded `{extension.upper()}`")
-    except:
-        await ctx.send(f"Error loading `{extension.upper()}`\n{e}")  # type: ignore
-
-
-
 # https://about.abstractumbra.dev/discord.py/2023/01/29/sync-command-example.html
 @bot.command()
 @commands.guild_only()
