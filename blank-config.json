@@ -1,6 +1,5 @@
 {"TOKEN": "token"
 ,"DATABASE": "postgresql+psycopg2://user:pass@host:port/database"
-,"PREFIX":  "db>"
 ,"VERSION": "0.0.1"
 ,"AUTHOR_NAME_LIMIT": 256
 ,"DESCRIPTION_LIMIT": 2048
